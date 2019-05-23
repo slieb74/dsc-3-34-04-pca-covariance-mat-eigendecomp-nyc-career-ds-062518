@@ -1,212 +1,275 @@
 
-# PCA Background: Covariance Matrix and Eigendecomposition
+# Principal Component Analysis in scikit-learn
 
 ## Introduction
-In this lesson, we shall look at some background concepts required to understand how PCA works, with required mathematical formulas and python implementation. We shall look at covariance matrix, Eigen decomposition and will work with required numpy functions. 
+
+Now that you've seen the curse of dimensionality, it's time to take a look at a dimensionality reduction technique! This will help you overcome the challenges of the curse of dimensionality (amongst other things). Essentially, PCA, or Prinicple Component Analysis, attempts to capture as much information of the dataset as possible while reducing the overall number of features.
 
 ## Objectives
+
 You will be able to:
-- Understand covariance matrix calculation with implementation in numpy
-- Understand and explain Eigendecomspoistion with its basic characteristics
-- Explain the role of eigenvectors and eigenvalues in eigendecomposition
-- Decompose and re-construct a matrix using eigendecomposition
 
-## Covariance
+* Explain use cases for PCA
+* Explain at a high level what PCA does
+* Implement PCA algorithm using scikit-learn library 
 
-We have looked into correlation and covariance as measures to calculate how one random variable changes with respect to another. Covariance is always measured between 2 dimensions (variables).
+## Generating Some Data
 
-> __If we calculate the covariance between a dimension and itself, we get the variance.__
+First, you need some data to perform PCA on. With that, here's a quick dataset you can generate using NumPy:
 
-So, if we a 3-dimensional data set (x, y, z), then we can measure the __covariance__ between the x and y dimensions, the y and z dimensions, and the x and z dimensions. Measuring the covariance between x and x, or y and y, or z and z would give us the __variance__ of the x, y and z dimensions respectively.
-
-The formula for covariance is give as: 
-
-$$cov(X,Y) = \frac{\sum_i^n(X_i -\mu_X)(Y_i - \mu_Y)}{n-1}$$
-
-## The Covariance Matrix
-
-We know that covariance is always measured between 2 dimensions __only__. If we have a data set with more than 2 dimensions, there is more than one covariance measurement that can be calculated. For example, from a 3 dimensional data set (x, y, z) you could calculate __cov(x,y), cov(x,z),__ and __cov(y,z)__. 
-
-For an -dimensional data set, we can calculate $ \frac{n!}{(n-2)! * 2}$different covariance values.
-
-A useful way to get all the possible covariance values between all the different dimensions is to calculate them all and put them in a matrix. The covariance matrix for a set of data with n dimensions would be:
-
-$$C^{n x n} = (c_{i,j}, c_{i,j} = cov(Dim_i, Dim_j))$$
-
-where $C^{m x n}$ is a matrix with $n$ rows and $n$ columns, and $Dim_x$ is the $i$th dimension.
-
-So if we have an n-dimensional data set, then the matrix has n rows and n columns (square matrix) and each entry in the matrix is the result of calculating the covariance between two separate dimensions as shown below:
-
-<img src="covmat.png" width=350>
-
-
-- Down the main diagonal, we can see that the covariance value is between one of the dimensions and itself. These are the variances for that dimension.
-
-- Since $cov(a,b) = cov(b,a)$, the matrix is symmetrical about the main diagonal.
-
-## Calculate Covariance matrix in Numpy
-
-In numpy, we can calculate the covariance of a given matrix using `np.cov()` function,  as shown below:
 
 ```python
-# Covariance Matrix 
 import numpy as np
-X = np.array([ [0.1, 0.3, 0.4, 0.8, 0.9],
-               [3.2, 2.4, 2.4, 0.1, 5.5],
-               [10., 8.2, 4.3, 2.6, 0.9]
-             ])
-print( np.cov(X) )
+
+x1 = np.linspace(-10,10,100)
+x2 = np.array([xi*2 + np.random.normal(loc=0, scale=.5) for xi in x1]) #A linear relationship, plus a little noise
+
+X = np.matrix(list(zip(x1,x2)))
 ```
 
 
 ```python
-# Code here 
+x2 = np.array(x2)
 ```
 
-    [[ 0.115   0.0575 -1.2325]
-     [ 0.0575  3.757  -0.8775]
-     [-1.2325 -0.8775 14.525 ]]
-
-
-The diagonal elements, $C_{ii}$ are the variances in the variables $x_i$ assuming N−1 degrees of freedom:
-
-```python
-print(np.var(X, axis=1, ddof=1))
-```
+Let's also generate a quick plot of this simple dataset to further orientate ourselves:
 
 
 ```python
-# Code here 
+import matplotlib.pyplot as plt
+import seaborn as sns
+%matplotlib inline
+
+sns.set_style('darkgrid')
+
+plt.scatter(x1,x2);
 ```
 
-    [ 0.115  3.757 14.525]
+
+![png](index_files/index_6_0.png)
 
 
-## Eigendecomposition
+## Performing PCA with sci-kit learn
 
-The eigendecomposition is one form of matrix decomposition. Decomposing a matrix means that we want to find a product of matrices that is equal to the initial matrix. In the case of the eigendecomposition, we decompose the initial matrix into the product of its __eigenvectors__ and __eigenvalues__.
- 
-A vector $v$ is an __eigenvector__ of a __square__ matrix $A$ if it satisfies the following equation:
-
-$$A.v = \lambda.v$$
-
-Here, __lambda__ ($\lambda$) is the represents the __eigenvalue__ scalar.
-
-> A matrix can have one eigenvector and eigenvalue for each dimension of the parent matrix. 
-
-Also , remember that not all square matrices can be decomposed into eigenvectors and eigenvalues, and some can only be decomposed in a way that requires complex numbers. __The parent matrix can be shown to be a product of the eigenvectors and eigenvalues.__
-
-$$A = Q . diag(V) . Q^-1$$
-
-$Q$ is a matrix comprised of the eigenvectors, $diag(V)$ is a diagonal matrix comprised of the __eigenvalues__ along the diagonal, and $Q^-1$ is the inverse of the matrix comprised of the eigenvectors.
-
-A decomposition operation breaks down a matrix into constituent parts to make certain operations on the matrix easier to perform. Eigendecomposition is used as an element to simplify the calculation of other more complex matrix operations.
-
-## Eigenvectors and Eigenvalues
-
-__Eigenvectors__ are unit vectors, with length or magnitude is equal to 1.0. They are often referred as right vectors, which simply means a column vector (as opposed to a row vector or a left vector). Imagine a transformation matrix that, when multiplied on the left, reflected vectors in the line $y=x$. We can see that if there were a vector that lay on the line $y=x$, it’s reflection it itself. This vector (and all multiples of it), would be an eigenvector of that transformation matrix.
-
-
-![](eig1.png)
-
-__Eigenvalues__ are coefficients applied to eigenvectors that give the vectors their length or magnitude. For example, a negative eigenvalue may reverse the direction of the eigenvector as part of scaling it. Eigenvalues are closely related to eigenvectors.
-
-A matrix that has only positive eigenvalues is referred to as a __positive definite matrix__, whereas if the eigenvalues are all negative, it is referred to as a __negative definite matrix__.
-
-Decomposing a matrix in terms of its eigenvalues and its eigenvectors gives valuable insights into the properties of the matrix. Certain matrix calculations, like computing the power of the matrix, become much easier when we use the eigendecomposition of the matrix. The eigendecomposition can be calculated in NumPy using the `eig()` function.
-
-The example below first defines a 3×3 square matrix. The eigendecomposition is calculated on the matrix returning the eigenvalues and eigenvectors using `eig()` method.
-
-```python
-# eigendecomposition
-from numpy import array
-from numpy.linalg import eig
-# define matrix
-A = array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-print(A)
-# calculate eigendecomposition
-values, vectors = eig(A)
-print(values)
-print(vectors)
-```
+Now onto PCA. First, take a look at how simple it is to implement PCA with sci-kit learn:
 
 
 ```python
-# Code here 
+from sklearn.decomposition import PCA
+
+pca = PCA()
+transformed = pca.fit_transform(X)
 ```
 
-    [[1 2 3]
-     [4 5 6]
-     [7 8 9]]
-    [ 1.61168440e+01 -1.11684397e+00 -9.75918483e-16]
-    [[-0.23197069 -0.78583024  0.40824829]
-     [-0.52532209 -0.08675134 -0.81649658]
-     [-0.8186735   0.61232756  0.40824829]]
-
-
-## Testing an Eigenvector
-
-Above, The eigenvectors are returned as a matrix with the same dimensions as the parent matrix (3x3), where each column is an eigenvector, e.g. the first eigenvector is vectors[:,0]. Eigenvalues are returned as a list, where value indices in the returned array are paired with eigenvectors by column index, e.g. the first eigenvalue at values[0] is paired with the first eigenvector at vectors[: 0].
-
-We will now test whether the first vector and value are in fact an eigenvalue and eigenvector for the matrix. We know they are, but it is a good exercise.
-
-```python
-# confirm first eigenvector
-B = A.dot(vectors[:, 0])
-print(B)
-C = vectors[:, 0] * values[0]
-print(C)
-```
+And you can once again plot the updated dataset:
 
 
 ```python
-# Code here 
+plt.scatter(transformed[:,0], transformed[:,1]);
 ```
 
-    [ -3.73863537  -8.46653421 -13.19443305]
-    [ -3.73863537  -8.46653421 -13.19443305]
 
+![png](index_files/index_10_0.png)
 
-## Reconstruct Original Matrix
-
-We can reverse the process and reconstruct the original matrix given only the eigenvectors and eigenvalues.
-
-First, the list of eigenvectors must be converted into a matrix, where each vector becomes a row. The eigenvalues need to be arranged into a diagonal matrix. The NumPy `diag()` function can be used for this. Next, we need to calculate the inverse of the eigenvector matrix, which we can achieve with the `inv()` function. Finally, these elements need to be multiplied together with the `dot()` function.
-
-```python
-from numpy.linalg import inv
-# create matrix from eigenvectors
-Q = vectors
-# create inverse of eigenvectors matrix
-R = inv(Q)
-# create diagonal matrix from eigenvalues
-L = np.diag(values)
-# reconstruct the original matrix
-B = Q.dot(L).dot(R)
-print(B)
-```
 
 
 ```python
-# Code here 
+pca.components_
 ```
 
-    [[1. 2. 3.]
-     [4. 5. 6.]
-     [7. 8. 9.]]
 
 
-## Further Resources
 
-Above description provides an overview of eigendecomposition and covariance matrix. You are encouraged to visit following resources to get a deep dive into underlying mathematics for above equations. 
+    array([[-0.44686606, -0.89460087],
+           [-0.89460087,  0.44686606]])
 
-[Variance- Covariance Matrix](https://stattrek.com/matrix-algebra/covariance-matrix.aspx)
 
-[The Eigen-Decomposition:
-Eigenvalues and Eigenvectors](https://www.utdallas.edu/~herve/Abdi-EVD2007-pretty.pdf)
 
-[Eigen Decomposition Visually Explained](http://setosa.io/ev/eigenvectors-and-eigenvalues/)
 
-## Summary 
+```python
+pca.mean_
+```
 
-In this lesson, we looked at calculating covariance matrix for a given matrix. We also looked at Eigen decomposition and its implementation in python. We can now go ahead and use these skills to apply principle component analysis for a given multidimensional dataset using these skills.  
+
+
+
+    array([ 7.10542736e-17, -1.79079789e-02])
+
+
+
+## Interpreting Results
+
+Let's take a look at what went on here. PCA transforms the dataset along principle axes. The first of these axes is designed to capture the maximum variance within the data. From here, additional axes are constructed which are orthogonal to the previous axes and continue to account for as much of the remaining variance as possible.
+
+For the current 2-d case, the axes which the data was projected onto look like this:
+
+
+```python
+plt.scatter(x1,x2);
+ax1, ay1 = pca.mean_[0], pca.mean_[1]
+ax2, ay2 = pca.mean_[0]+pca.components_[0][0], pca.mean_[1]+pca.components_[0][1]
+ax3, ay3 = pca.mean_[0]+pca.components_[1][0], pca.mean_[1]+pca.components_[1][1]
+plt.plot([ax1,ax2], [ay1,ay2], color='red')
+plt.plot([ax2,ax3], [ay2,ay3], color='red');
+```
+
+
+![png](index_files/index_14_0.png)
+
+
+So the updated graph you saw, is the same dataset rotated onto these red axes:
+
+
+```python
+plt.scatter(transformed[:,0], transformed[:,1]);
+plt.axhline(color='red')
+plt.axvline(color='red')
+```
+
+
+
+
+    <matplotlib.lines.Line2D at 0x1a190a4d68>
+
+
+
+
+![png](index_files/index_16_1.png)
+
+
+Note the small scale of the y-axis. You can also plot the transformed dataset on the new axes with a scale similar to what you saw before:
+
+
+```python
+plt.scatter(transformed[:,0], transformed[:,1]);
+plt.axhline(color='red')
+plt.axvline(color='red')
+plt.ylim(-10,10)
+```
+
+
+
+
+    (-10, 10)
+
+
+
+
+![png](index_files/index_18_1.png)
+
+
+Again, this is the geographical interpretation of what just happened:  
+
+<img src="images/inhouse_pca.png">
+
+## Determining the Explained Variance
+
+Typically, one would use PCA to actually reduce the number of dimensions. In this case, you've simply reparameritized the dataset along new axes. That said, if you look at the first of these primary axes, you can see the patterns encapsulated by the principle component. Moreover, sci-kit learn also lets you quickly determine the overall variance in the dataset accounted for in each of the principle components.
+
+
+```python
+pca.explained_variance_ratio_
+```
+
+
+
+
+    array([9.99917201e-01, 8.27993112e-05])
+
+
+
+Keep in mind that these quantities are cumulative: principle component 2 attempts to account for the variance not accounted for in the primary component. You can view the total variance using `np.cumsum()`:
+
+
+```python
+np.cumsum(pca.explained_variance_ratio_)
+```
+
+
+
+
+    array([0.9999172, 1.       ])
+
+
+
+## Visualizing the Principle Component Alone
+
+To help demonstrate the structure captured by the first principal component, observe the impact of coloring the dataset and then visualizing the first component.
+
+
+```python
+plt.scatter(x1,x2, c=sns.color_palette('RdBu', n_colors=100));
+```
+
+
+![png](index_files/index_25_0.png)
+
+
+
+```python
+plt.scatter(transformed[:,0], [0 for i in range(100)] , c=sns.color_palette('RdBu', n_colors=100))
+```
+
+
+
+
+    <matplotlib.collections.PathCollection at 0x1a1c36f8d0>
+
+
+
+
+![png](index_files/index_26_1.png)
+
+
+## Steps for Performing PCA
+
+The theory behind PCA rests upon many foundational concepts of linear algebra. After all, PCA is re-encoding a dataset into an alternative basis (the axes). Here's the exact steps:
+
+1. Recenter each feature of the dataset by subtracting that feature's mean from the feature vector
+2. Calculate the covariance matrix for your centered dataset
+3. Calculate the eigenvectors of the covariance matrix
+    1. You'll further investigate the concept of eigenvectors in the upcoming lesson
+4. Project the dataset into the new feature space: Multiply the eigenvectors by the mean centered features
+
+You can see some of these intermediate steps from the `pca` instance object itself. 
+
+
+```python
+pca.mean_ #Pulling up the original feature means which were used to center the data
+```
+
+
+
+
+    array([ 7.10542736e-17, -1.79079789e-02])
+
+
+
+
+```python
+pca.get_covariance() #Pulling up the covariance matrix of the mean centered data
+```
+
+
+
+
+    array([[ 34.35023637,  68.7387464 ],
+           [ 68.7387464 , 137.6253672 ]])
+
+
+
+
+```python
+pca.components_ #Pulling up the eigenvectors of the covariance matrix
+```
+
+
+
+
+    array([[-0.44686606, -0.89460087],
+           [-0.89460087,  0.44686606]])
+
+
+
+##  Summary
+In this lesson, you looked at implementing PCA with scikit-learn and the geometric interpretations of principle components. From here, you'll get a chance to practice implementing PCA yourself before going on to code some of the underlying components implemented by sci-kit learn using NumPy.
